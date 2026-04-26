@@ -39,7 +39,11 @@ async function searchMovie() {
   }
 
   // Step 6: Show a loading message while we wait for the API
-  resultsDiv.innerHTML = `<p class="loading">Searching for "${query}"...</p>`;
+  resultsDiv.innerHTML = `
+  <div class="spinner-container">
+    <div class="spinner"></div>
+  </div>
+`;
 
   // Step 7: Make the API call (inside try/catch for error handling)
   try {
