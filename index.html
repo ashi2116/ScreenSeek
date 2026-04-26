@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ScreenSeek</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="header">
+    <h1>🎬 ScreenSeek</h1>
+    <p>Search any movie and get instant results</p>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="e.g. Inception, Batman, Avatar..." />
+    <button onclick="searchMovie()">Search</button>
+  </div>
+
+  <div id="error-msg" class="error-msg"></div>
+
+  <div id="results" class="results-grid"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
