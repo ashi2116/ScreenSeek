@@ -160,3 +160,112 @@ body {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+/* ---------- Modal Overlay ---------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------- Modal Box ---------- */
+.modal {
+  background: #1e1e2e;
+  border-radius: 16px;
+  max-width: 860px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 32px;
+}
+
+/* ---------- Close Button ---------- */
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #2a2a3e;
+  border: none;
+  color: #f0f0f0;
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-close:hover {
+  background: #f5c518;
+  color: #0f0f1a;
+}
+
+/* ---------- Modal Content Layout ---------- */
+.modal-content {
+  display: flex;
+  gap: 28px;
+  margin-top: 10px;
+}
+
+/* ---------- Modal Left (Poster) ---------- */
+.modal-left img {
+  width: 200px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+/* ---------- Modal Right (Details) ---------- */
+.modal-right h2 {
+  font-size: 1.6rem;
+  color: #f5c518;
+  margin-bottom: 12px;
+}
+
+.modal-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.badge {
+  background: #2a2a3e;
+  color: #aaa;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+
+.modal-rating {
+  font-size: 1.1rem;
+  color: #f5c518;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.modal-label {
+  color: #aaa;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 14px;
+  margin-bottom: 4px;
+}
+
+.modal-right p {
+  color: #f0f0f0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}

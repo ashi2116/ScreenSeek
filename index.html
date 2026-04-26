@@ -21,6 +21,47 @@
   <div id="error-msg" class="error-msg"></div>
 
   <div id="results" class="results-grid"></div>
+  <!-- Movie Details Popup -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal">
+
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div class="modal-content">
+
+      <div class="modal-left">
+        <img id="modal-poster" src="" alt="Movie Poster" />
+      </div>
+
+      <div class="modal-right">
+        <h2 id="modal-title"></h2>
+
+        <div class="modal-meta">
+          <span id="modal-year" class="badge"></span>
+          <span id="modal-rated" class="badge"></span>
+          <span id="modal-runtime" class="badge"></span>
+        </div>
+
+        <div class="modal-rating">
+          ⭐ <span id="modal-imdb"></span> / 10
+        </div>
+
+        <p class="modal-label">Genre</p>
+        <p id="modal-genre"></p>
+
+        <p class="modal-label">Director</p>
+        <p id="modal-director"></p>
+
+        <p class="modal-label">Cast</p>
+        <p id="modal-cast"></p>
+
+        <p class="modal-label">Plot</p>
+        <p id="modal-plot"></p>
+
+      </div>
+    </div>
+  </div>
+</div>
 
   <script src="app.js"></script>
 </body>

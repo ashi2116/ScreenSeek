@@ -96,7 +96,7 @@ function displayResults(movies) {
       : "https://via.placeholder.com/160x230?text=No+Image";
 
     return `
-      <div class="card">
+      <div class="card" onclick="openModal('${movie.imdbID}')">
         <img src="${poster}" alt="${movie.Title}" />
         <div class="card-info">
           <h3>${movie.Title}</h3>
@@ -113,5 +113,73 @@ function displayResults(movies) {
 document.getElementById("searchInput").addEventListener("keydown", function (e) {
   if (e.key === "Enter") {
     searchMovie();
+  }
+});
+// =============================================
+// 🎬 Open Modal with full movie details
+// =============================================
+async function openModal(imdbID) {
+
+  // Show the overlay immediately
+  document.getElementById("modal-overlay").classList.remove("hidden");
+
+  // Show loading state inside modal while fetching
+  document.getElementById("modal-title").textContent = "Loading...";
+  document.getElementById("modal-plot").textContent = "";
+  document.getElementById("modal-poster").src = "";
+  document.getElementById("modal-director").textContent = "";
+  document.getElementById("modal-cast").textContent = "";
+  document.getElementById("modal-genre").textContent = "";
+  document.getElementById("modal-imdb").textContent = "";
+  document.getElementById("modal-year").textContent = "";
+  document.getElementById("modal-rated").textContent = "";
+  document.getElementById("modal-runtime").textContent = "";
+
+  try {
+    // Fetch full movie details using IMDB ID
+    // Notice we use "i=" instead of "s=" — this gets ONE movie's full details
+    const url = `https://www.omdbapi.com/?i=${imdbID}&apikey=${API_KEY}`;
+    const response = await fetch(url);
+    const movie = await response.json();
+
+    // Fill in all the details
+    document.getElementById("modal-title").textContent = movie.Title;
+    document.getElementById("modal-plot").textContent = movie.Plot;
+    document.getElementById("modal-director").textContent = movie.Director;
+    document.getElementById("modal-cast").textContent = movie.Actors;
+    document.getElementById("modal-genre").textContent = movie.Genre;
+    document.getElementById("modal-imdb").textContent = movie.imdbRating;
+    document.getElementById("modal-year").textContent = movie.Year;
+    document.getElementById("modal-rated").textContent = movie.Rated;
+    document.getElementById("modal-runtime").textContent = movie.Runtime;
+
+    // Set poster image
+    document.getElementById("modal-poster").src = movie.Poster !== "N/A"
+      ? movie.Poster
+      : "https://via.placeholder.com/200x300?text=No+Image";
+
+  } catch (error) {
+    document.getElementById("modal-title").textContent = "Failed to load details.";
+  }
+}
+
+// =============================================
+// ❌ Close the Modal
+// =============================================
+function closeModal() {
+  document.getElementById("modal-overlay").classList.add("hidden");
+}
+
+// Close modal if user clicks outside the modal box
+document.getElementById("modal-overlay").addEventListener("click", function(e) {
+  if (e.target === this) {
+    closeModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    closeModal();
   }
 });
