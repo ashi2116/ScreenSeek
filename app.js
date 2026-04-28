@@ -148,7 +148,15 @@ async function openModal(imdbID) {
     document.getElementById("modal-director").textContent = movie.Director;
     document.getElementById("modal-cast").textContent = movie.Actors;
     document.getElementById("modal-genre").textContent = movie.Genre;
-    document.getElementById("modal-imdb").textContent = movie.imdbRating;
+    document.getElementById("modal-imdb").innerHTML = `
+  <div class="stars-container">
+    <div class="stars">
+      ${generateStars(movie.imdbRating)}
+    </div>
+    <span class="rating-text">${movie.imdbRating}/10</span>
+    <span class="rating-votes">(${movie.imdbVotes} votes)</span>
+  </div>
+`;
     document.getElementById("modal-year").textContent = movie.Year;
     document.getElementById("modal-rated").textContent = movie.Rated;
     document.getElementById("modal-runtime").textContent = movie.Runtime;
@@ -183,3 +191,34 @@ document.addEventListener("keydown", function(e) {
     closeModal();
   }
 });
+// =============================================
+// ⭐ Generate Star Rating HTML
+// =============================================
+function generateStars(rating) {
+  // rating comes as a string like "8.8" — convert to number
+  const num = parseFloat(rating);
+
+  // If rating is not available
+  if (isNaN(num)) {
+    return `<span class="rating-text">No rating available</span>`;
+  }
+
+  // Convert to 0-10 scale (OMDB already gives out of 10)
+  // We'll show 10 stars total
+  let starsHTML = "";
+
+  for (let i = 1; i <= 10; i++) {
+    if (i <= Math.floor(num)) {
+      // Full star — rating is above this star's value
+      starsHTML += `<span class="star full">★</span>`;
+    } else if (i === Math.ceil(num) && num % 1 >= 0.5) {
+      // Half star — rating has a .5 or above decimal
+      starsHTML += `<span class="star half">★</span>`;
+    } else {
+      // Empty star
+      starsHTML += `<span class="star empty">★</span>`;
+    }
+  }
+
+  return starsHTML;
+}

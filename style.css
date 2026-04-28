@@ -269,3 +269,45 @@ body {
   font-size: 0.92rem;
   line-height: 1.6;
 }
+/* ---------- Star Rating ---------- */
+.stars-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stars {
+  display: flex;
+  gap: 3px;
+}
+
+.star {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.star.full {
+  color: #f5c518; /* yellow filled star */
+}
+
+.star.half {
+  background: linear-gradient(90deg, #f5c518 50%, #3a3a4e 50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.star.empty {
+  color: #3a3a4e; /* dark empty star */
+}
+
+.rating-text {
+  color: #f5c518;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.rating-votes {
+  color: #aaa;
+  font-size: 0.82rem;
+}
