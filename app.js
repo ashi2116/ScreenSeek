@@ -35,7 +35,7 @@ const db   = getFirestore(app);
 // =============================================
 // 🎬 OMDB API KEY
 // =============================================
-const API_KEY = "your_omdb_key_here"; // ← Replace!
+const API_KEY = "793ab0cf"; // ← Replace!
 
 // =============================================
 // 🗄️ STATE
