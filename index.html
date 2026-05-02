@@ -5,61 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ScreenSeek</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Google Font: Clean & Apple-like -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body>
 
-  <div class="header">
-    <h1>🎬 ScreenSeek</h1>
-    <p>Search any movie and get instant results</p>
-  </div>
+  <!-- Particle Background Canvas -->
+  <canvas id="particles-canvas"></canvas>
 
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="e.g. Inception, Batman, Avatar..." />
-    <button onclick="searchMovie()">Search</button>
-  </div>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="logo-badge">🎬</div>
+      <h1 class="hero-title">
+        <span class="title-screen">Screen</span><span class="title-seek">Seek</span>
+      </h1>
+      <p class="hero-subtitle">Discover movies you'll love — instantly.</p>
 
-  <div id="error-msg" class="error-msg"></div>
-
-  <div id="results" class="results-grid"></div>
-  <!-- Movie Details Popup -->
-<div id="modal-overlay" class="modal-overlay hidden">
-  <div class="modal">
-
-    <button class="modal-close" onclick="closeModal()">✕</button>
-
-    <div class="modal-content">
-
-      <div class="modal-left">
-        <img id="modal-poster" src="" alt="Movie Poster" />
+      <!-- Search Bar -->
+      <div class="search-wrapper">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search any movie..."
+            autocomplete="off"
+          />
+          <button id="searchBtn" onclick="searchMovie()">Search</button>
+        </div>
       </div>
 
-      <div class="modal-right">
-        <h2 id="modal-title"></h2>
+      <!-- Filter Buttons -->
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setFilter('movie', this)">🎬 Movies</button>
+        <button class="filter-btn" onclick="setFilter('series', this)">📺 Series</button>
+        <button class="filter-btn" onclick="setFilter('episode', this)">🎞️ Episodes</button>
+        <button class="filter-btn" onclick="setFilter('', this)">🌐 All</button>
+      </div>
 
-        <div class="modal-meta">
-          <span id="modal-year" class="badge"></span>
-          <span id="modal-rated" class="badge"></span>
-          <span id="modal-runtime" class="badge"></span>
+    </div>
+  </section>
+
+  <!-- Error Message -->
+  <div id="error-msg" class="error-msg"></div>
+
+  <!-- Results -->
+  <section id="results-section" class="results-section hidden">
+    <h2 class="results-heading" id="results-heading"></h2>
+    <div id="results" class="results-grid"></div>
+
+    <!-- Pagination -->
+    <div class="pagination hidden" id="pagination">
+      <button onclick="changePage(-1)" id="prevBtn">← Prev</button>
+      <span id="pageInfo"></span>
+      <button onclick="changePage(1)" id="nextBtn">Next →</button>
+    </div>
+  </section>
+
+  <!-- Favourites Section -->
+  <section id="favourites-section" class="favourites-section hidden">
+    <h2 class="results-heading">❤️ My Favourites</h2>
+    <div id="favourites-grid" class="results-grid"></div>
+  </section>
+
+  <!-- Floating Favourites Toggle -->
+  <button class="fab" onclick="toggleFavourites()" title="My Favourites">❤️</button>
+
+  <!-- Dark/Light Mode Toggle -->
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-content">
+        <div class="modal-left">
+          <img id="modal-poster" src="" alt="Poster" />
+          <button class="fav-btn" id="modal-fav-btn" onclick="toggleFavourite()">❤️ Add to Favourites</button>
         </div>
-
-        <div id="modal-imdb"></div>
-
-        <p class="modal-label">Genre</p>
-        <p id="modal-genre"></p>
-
-        <p class="modal-label">Director</p>
-        <p id="modal-director"></p>
-
-        <p class="modal-label">Cast</p>
-        <p id="modal-cast"></p>
-
-        <p class="modal-label">Plot</p>
-        <p id="modal-plot"></p>
-
+        <div class="modal-right">
+          <h2 id="modal-title"></h2>
+          <div class="modal-meta">
+            <span id="modal-year" class="badge"></span>
+            <span id="modal-rated" class="badge"></span>
+            <span id="modal-runtime" class="badge"></span>
+          </div>
+          <div id="modal-imdb"></div>
+          <p class="modal-label">Genre</p>
+          <p id="modal-genre"></p>
+          <p class="modal-label">Director</p>
+          <p id="modal-director"></p>
+          <p class="modal-label">Cast</p>
+          <p id="modal-cast"></p>
+          <p class="modal-label">Plot</p>
+          <p id="modal-plot"></p>
+          <div id="modal-trailer"></div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
   <script src="app.js"></script>
 </body>
