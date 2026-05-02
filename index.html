@@ -9,7 +9,7 @@
 </head>
 <body>
 
-  <!-- SCROLLING POSTER WALL BACKGROUND -->
+  <!-- POSTER WALL -->
   <div class="poster-wall" id="posterWall">
     <div class="poster-col" id="col1"></div>
     <div class="poster-col" id="col2"></div>
@@ -21,89 +21,175 @@
   </div>
   <div class="wall-overlay"></div>
 
-  <!-- THEME TOGGLE -->
-  <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-
-  <!-- HERO SECTION -->
-  <section class="hero">
-    <div class="hero-content">
-      <div class="logo-wrap">
-        <span class="logo-icon">🎬</span>
-        <h1 class="hero-title">
-          <span class="t-screen">Screen</span><span class="t-seek">Seek</span>
-        </h1>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-logo" onclick="showPage('home')">🎬 ScreenSeek</div>
+    <div class="nav-links">
+      <button class="nav-btn active" onclick="showPage('home')" id="nav-home">🏠 Home</button>
+      <button class="nav-btn" onclick="showPage('search')" id="nav-search">🔍 Search</button>
+      <button class="nav-btn" onclick="showPage('trending')" id="nav-trending">🔥 Trending</button>
+      <button class="nav-btn" onclick="showPage('watchlater')" id="nav-watchlater">🕐 Watch Later</button>
+      <button class="nav-btn" onclick="showPage('favourites')" id="nav-favourites">❤️ Favourites</button>
+    </div>
+    <div class="nav-auth">
+      <div id="authLoggedOut">
+        <button class="auth-btn" onclick="openAuthModal('login')">Login</button>
+        <button class="auth-btn primary" onclick="openAuthModal('signup')">Sign Up</button>
       </div>
-      <p class="hero-sub">Millions of movies. Find yours instantly.</p>
-
-      <!-- SEARCH BAR + SUGGESTIONS -->
-      <div class="search-wrap">
-        <div class="search-box" id="searchBox">
-          <span class="s-icon">🔍</span>
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Search movies, series, episodes..."
-            autocomplete="off"
-          />
-          <button onclick="searchMovie()">Search</button>
-        </div>
-        <!-- Suggestions Dropdown -->
-        <div class="suggestions" id="suggestions"></div>
-      </div>
-
-      <!-- FILTER BUTTONS -->
-      <div class="filter-bar">
-        <button class="filter-btn active" onclick="setFilter('movie',this)">🎬 Movies</button>
-        <button class="filter-btn" onclick="setFilter('series',this)">📺 Series</button>
-        <button class="filter-btn" onclick="setFilter('episode',this)">🎞️ Episodes</button>
-        <button class="filter-btn" onclick="setFilter('',this)">🌐 All</button>
+      <div id="authLoggedIn" class="hidden">
+        <span id="userGreeting" class="user-greeting"></span>
+        <button class="auth-btn" onclick="logoutUser()">Logout</button>
       </div>
     </div>
-  </section>
+  </nav>
 
   <!-- ERROR -->
   <div id="error-msg" class="error-msg"></div>
 
-  <!-- POPULAR MOVIES (shown on homepage) -->
-  <section class="popular-section" id="popularSection">
-    <div class="section-header">
-      <h2 class="section-title">🔥 Trending Now</h2>
-    </div>
-    <div class="results-grid" id="popularGrid"></div>
-  </section>
+  <!-- =================== HOME PAGE =================== -->
+  <div id="page-home" class="page">
 
-  <!-- SEARCH RESULTS -->
-  <section class="results-section hidden" id="resultsSection">
-    <div class="section-header">
-      <h2 class="section-title" id="resultsHeading"></h2>
-    </div>
-    <div class="results-grid" id="results"></div>
-    <div class="pagination hidden" id="pagination">
-      <button onclick="changePage(-1)" id="prevBtn">← Prev</button>
-      <span id="pageInfo"></span>
-      <button onclick="changePage(1)" id="nextBtn">Next →</button>
-    </div>
-  </section>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-content">
+        <div class="logo-wrap">
+          <span class="logo-icon">🎬</span>
+          <h1 class="hero-title">
+            <span class="t-screen">Screen</span><span class="t-seek">Seek</span>
+          </h1>
+        </div>
+        <p class="hero-sub">Millions of movies. Find yours instantly.</p>
+        <div class="search-wrap">
+          <div class="search-box" id="heroSearchBox">
+            <span class="s-icon">🔍</span>
+            <input type="text" id="heroSearchInput" placeholder="Search movies, series..." autocomplete="off"/>
+            <button onclick="heroSearch()">Search</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <!-- FAVOURITES SECTION -->
-  <section class="results-section hidden" id="favouritesSection">
-    <div class="section-header">
-      <h2 class="section-title">❤️ My Favourites</h2>
+    <!-- POPULAR -->
+    <section class="content-section">
+      <h2 class="section-title">⭐ Popular Movies</h2>
+      <div class="results-grid" id="popularGrid"></div>
+    </section>
+
+    <!-- POPULAR SERIES -->
+    <section class="content-section">
+      <h2 class="section-title">📺 Popular Series</h2>
+      <div class="results-grid" id="popularSeriesGrid"></div>
+    </section>
+
+  </div>
+
+  <!-- =================== SEARCH PAGE =================== -->
+  <div id="page-search" class="page hidden">
+    <section class="page-hero">
+      <h2 class="page-title">🔍 Search</h2>
+      <div class="search-wrap">
+        <div class="search-box" id="searchBox">
+          <span class="s-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search movies, series, episodes..." autocomplete="off"/>
+          <button onclick="searchMovie()">Search</button>
+        </div>
+        <div class="suggestions" id="suggestions"></div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" id="filter-movie" onclick="setFilter('movie',this)">🎬 Movies</button>
+        <button class="filter-btn" id="filter-series" onclick="setFilter('series',this)">📺 Series</button>
+        <button class="filter-btn" id="filter-episode" onclick="setFilter('episode',this)">🎞️ Episodes</button>
+        <button class="filter-btn" id="filter-all" onclick="setFilter('',this)">🌐 All</button>
+      </div>
+    </section>
+    <section class="content-section">
+      <h2 class="section-title" id="resultsHeading">Enter a title to search</h2>
+      <div class="results-grid" id="results"></div>
+      <div class="pagination hidden" id="pagination">
+        <button onclick="changePage(-1)" id="prevBtn">← Prev</button>
+        <span id="pageInfo"></span>
+        <button onclick="changePage(1)" id="nextBtn">Next →</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- =================== TRENDING PAGE =================== -->
+  <div id="page-trending" class="page hidden">
+    <section class="page-hero">
+      <h2 class="page-title">🔥 Trending</h2>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="loadTrending('movie',this)">🎬 Movies</button>
+        <button class="filter-btn" onclick="loadTrending('series',this)">📺 Series</button>
+      </div>
+    </section>
+    <section class="content-section">
+      <div class="results-grid" id="trendingGrid"></div>
+    </section>
+  </div>
+
+  <!-- =================== WATCH LATER PAGE =================== -->
+  <div id="page-watchlater" class="page hidden">
+    <section class="page-hero">
+      <h2 class="page-title">🕐 Watch Later</h2>
+      <p class="page-sub" id="watchlaterSub">Your personal watch list</p>
+    </section>
+    <section class="content-section">
+      <div class="results-grid" id="watchlaterGrid"></div>
+    </section>
+  </div>
+
+  <!-- =================== FAVOURITES PAGE =================== -->
+  <div id="page-favourites" class="page hidden">
+    <section class="page-hero">
+      <h2 class="page-title">❤️ My Favourites</h2>
+    </section>
+    <section class="content-section">
+      <div class="results-grid" id="favouritesGrid"></div>
+    </section>
+  </div>
+
+  <!-- =================== AUTH MODAL =================== -->
+  <div id="auth-overlay" class="modal-overlay hidden">
+    <div class="modal auth-modal">
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      <h2 id="authTitle" class="auth-title">Login</h2>
+
+      <!-- Google Login -->
+      <button class="google-btn" onclick="loginWithGoogle()">
+        <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G"/>
+        Continue with Google
+      </button>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <!-- Email/Password Form -->
+      <div class="auth-form">
+        <input type="text" id="authName" placeholder="Full Name" class="auth-input hidden"/>
+        <input type="email" id="authEmail" placeholder="Email address" class="auth-input"/>
+        <input type="password" id="authPassword" placeholder="Password" class="auth-input"/>
+        <button class="auth-submit" id="authSubmitBtn" onclick="submitAuth()">Login</button>
+      </div>
+
+      <p class="auth-switch">
+        Don't have an account?
+        <span onclick="toggleAuthMode()" id="authSwitchText" class="auth-link">Sign Up</span>
+      </p>
+      <p id="authError" class="auth-error"></p>
     </div>
-    <div class="results-grid" id="favouritesGrid"></div>
-  </section>
+  </div>
 
-  <!-- FAB -->
-  <button class="fab" onclick="toggleFavourites()" title="My Favourites">❤️</button>
-
-  <!-- MODAL -->
+  <!-- =================== MOVIE MODAL =================== -->
   <div id="modal-overlay" class="modal-overlay hidden">
     <div class="modal">
       <button class="modal-close" onclick="closeModal()">✕</button>
       <div class="modal-content">
         <div class="modal-left">
           <img id="modal-poster" src="" alt="Poster"/>
-          <button class="fav-btn" id="modal-fav-btn" onclick="toggleFavourite()">❤️ Add to Favourites</button>
+          <button class="fav-btn" id="modal-fav-btn" onclick="toggleFavourite()">❤️ Favourite</button>
+          <button class="watch-btn" id="modal-watch-btn" onclick="toggleWatchLater()">🕐 Watch Later</button>
+          <a id="modal-justwatch" href="#" target="_blank" class="justwatch-btn hidden">
+            🍿 Where to Watch
+          </a>
         </div>
         <div class="modal-right">
           <h2 id="modal-title"></h2>
@@ -111,6 +197,7 @@
             <span id="modal-year" class="badge"></span>
             <span id="modal-rated" class="badge"></span>
             <span id="modal-runtime" class="badge"></span>
+            <span id="modal-type" class="badge"></span>
           </div>
           <div id="modal-imdb"></div>
           <p class="modal-label">Genre</p>
@@ -127,6 +214,7 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Firebase SDKs -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
