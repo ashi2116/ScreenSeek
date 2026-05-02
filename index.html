@@ -1,61 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ScreenSeek</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- Google Font: Clean & Apple-like -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body>
 
-  <!-- Particle Background Canvas -->
-  <canvas id="particles-canvas"></canvas>
+  <!-- SCROLLING POSTER WALL BACKGROUND -->
+  <div class="poster-wall" id="posterWall">
+    <div class="poster-col" id="col1"></div>
+    <div class="poster-col" id="col2"></div>
+    <div class="poster-col" id="col3"></div>
+    <div class="poster-col" id="col4"></div>
+    <div class="poster-col" id="col5"></div>
+    <div class="poster-col" id="col6"></div>
+    <div class="poster-col" id="col7"></div>
+  </div>
+  <div class="wall-overlay"></div>
 
-  <!-- Hero Section -->
+  <!-- THEME TOGGLE -->
+  <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+  <!-- HERO SECTION -->
   <section class="hero">
     <div class="hero-content">
-      <div class="logo-badge">🎬</div>
-      <h1 class="hero-title">
-        <span class="title-screen">Screen</span><span class="title-seek">Seek</span>
-      </h1>
-      <p class="hero-subtitle">Discover movies you'll love — instantly.</p>
+      <div class="logo-wrap">
+        <span class="logo-icon">🎬</span>
+        <h1 class="hero-title">
+          <span class="t-screen">Screen</span><span class="t-seek">Seek</span>
+        </h1>
+      </div>
+      <p class="hero-sub">Millions of movies. Find yours instantly.</p>
 
-      <!-- Search Bar -->
-      <div class="search-wrapper">
-        <div class="search-bar">
-          <span class="search-icon">🔍</span>
+      <!-- SEARCH BAR + SUGGESTIONS -->
+      <div class="search-wrap">
+        <div class="search-box" id="searchBox">
+          <span class="s-icon">🔍</span>
           <input
             type="text"
             id="searchInput"
-            placeholder="Search any movie..."
+            placeholder="Search movies, series, episodes..."
             autocomplete="off"
           />
-          <button id="searchBtn" onclick="searchMovie()">Search</button>
+          <button onclick="searchMovie()">Search</button>
         </div>
+        <!-- Suggestions Dropdown -->
+        <div class="suggestions" id="suggestions"></div>
       </div>
 
-      <!-- Filter Buttons -->
+      <!-- FILTER BUTTONS -->
       <div class="filter-bar">
-        <button class="filter-btn active" onclick="setFilter('movie', this)">🎬 Movies</button>
-        <button class="filter-btn" onclick="setFilter('series', this)">📺 Series</button>
-        <button class="filter-btn" onclick="setFilter('episode', this)">🎞️ Episodes</button>
-        <button class="filter-btn" onclick="setFilter('', this)">🌐 All</button>
+        <button class="filter-btn active" onclick="setFilter('movie',this)">🎬 Movies</button>
+        <button class="filter-btn" onclick="setFilter('series',this)">📺 Series</button>
+        <button class="filter-btn" onclick="setFilter('episode',this)">🎞️ Episodes</button>
+        <button class="filter-btn" onclick="setFilter('',this)">🌐 All</button>
       </div>
-
     </div>
   </section>
 
-  <!-- Error Message -->
+  <!-- ERROR -->
   <div id="error-msg" class="error-msg"></div>
 
-  <!-- Results -->
-  <section id="results-section" class="results-section hidden">
-    <h2 class="results-heading" id="results-heading"></h2>
-    <div id="results" class="results-grid"></div>
+  <!-- POPULAR MOVIES (shown on homepage) -->
+  <section class="popular-section" id="popularSection">
+    <div class="section-header">
+      <h2 class="section-title">🔥 Trending Now</h2>
+    </div>
+    <div class="results-grid" id="popularGrid"></div>
+  </section>
 
-    <!-- Pagination -->
+  <!-- SEARCH RESULTS -->
+  <section class="results-section hidden" id="resultsSection">
+    <div class="section-header">
+      <h2 class="section-title" id="resultsHeading"></h2>
+    </div>
+    <div class="results-grid" id="results"></div>
     <div class="pagination hidden" id="pagination">
       <button onclick="changePage(-1)" id="prevBtn">← Prev</button>
       <span id="pageInfo"></span>
@@ -63,25 +85,24 @@
     </div>
   </section>
 
-  <!-- Favourites Section -->
-  <section id="favourites-section" class="favourites-section hidden">
-    <h2 class="results-heading">❤️ My Favourites</h2>
-    <div id="favourites-grid" class="results-grid"></div>
+  <!-- FAVOURITES SECTION -->
+  <section class="results-section hidden" id="favouritesSection">
+    <div class="section-header">
+      <h2 class="section-title">❤️ My Favourites</h2>
+    </div>
+    <div class="results-grid" id="favouritesGrid"></div>
   </section>
 
-  <!-- Floating Favourites Toggle -->
+  <!-- FAB -->
   <button class="fab" onclick="toggleFavourites()" title="My Favourites">❤️</button>
 
-  <!-- Dark/Light Mode Toggle -->
-  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
-
-  <!-- Modal -->
+  <!-- MODAL -->
   <div id="modal-overlay" class="modal-overlay hidden">
     <div class="modal">
       <button class="modal-close" onclick="closeModal()">✕</button>
       <div class="modal-content">
         <div class="modal-left">
-          <img id="modal-poster" src="" alt="Poster" />
+          <img id="modal-poster" src="" alt="Poster"/>
           <button class="fav-btn" id="modal-fav-btn" onclick="toggleFavourite()">❤️ Add to Favourites</button>
         </div>
         <div class="modal-right">

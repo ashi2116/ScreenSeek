@@ -1,70 +1,128 @@
-
 const API_KEY = "793ab0cf"; 
 
 // =============================================
 // 🗄️ State
 // =============================================
 const cache = {};
-let currentQuery = "";
-let currentPage = 1;
-let currentFilter = "movie";
-let totalResults = 0;
-let currentMovie = null;
-let favourites = JSON.parse(localStorage.getItem("screenseek-favs") || "[]");
+let currentQuery   = "";
+let currentPage    = 1;
+let currentFilter  = "movie";
+let totalResults   = 0;
+let currentMovie   = null;
+let suggestTimer   = null;
+let favourites     = JSON.parse(localStorage.getItem("screenseek-favs") || "[]");
+
+// Popular searches to show on homepage
+const POPULAR_SEARCHES = [
+  "Avengers", "Batman", "Spider-Man",
+  "Inception", "Interstellar", "Joker"
+];
 
 // =============================================
-// 🎨 Theme Toggle
+// 🎬 POSTER WALL — fetch real posters for bg
 // =============================================
-function toggleTheme() {
-  document.body.classList.toggle("dark");
-  const btn = document.querySelector(".theme-toggle");
-  btn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
-}
+const WALL_SEARCHES = [
+  "action","drama","comedy","thriller","horror",
+  "romance","sci-fi","adventure"
+];
 
-// =============================================
-// 🔵 Filter
-// =============================================
-function setFilter(type, btn) {
-  currentFilter = type;
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  if (currentQuery) {
-    currentPage = 1;
-    searchMovie();
+async function buildPosterWall() {
+  const cols = [
+    document.getElementById("col1"),
+    document.getElementById("col2"),
+    document.getElementById("col3"),
+    document.getElementById("col4"),
+    document.getElementById("col5"),
+    document.getElementById("col6"),
+    document.getElementById("col7"),
+  ];
+
+  let allPosters = [];
+
+  // Fetch posters from multiple genres
+  for (let i = 0; i < WALL_SEARCHES.length; i++) {
+    try {
+      const r = await fetch(`https://www.omdbapi.com/?s=${WALL_SEARCHES[i]}&type=movie&apikey=${API_KEY}`);
+      const d = await r.json();
+      if (d.Search) {
+        d.Search.forEach(m => {
+          if (m.Poster && m.Poster !== "N/A") allPosters.push(m.Poster);
+        });
+      }
+    } catch(e) {}
   }
+
+  // Shuffle posters
+  allPosters = allPosters.sort(() => Math.random() - 0.5);
+
+  // Fill each column — duplicate for seamless loop
+  cols.forEach((col, i) => {
+    const colPosters = [];
+    for (let j = 0; j < 8; j++) {
+      colPosters.push(allPosters[(i * 8 + j) % allPosters.length]);
+    }
+    // Duplicate for seamless infinite scroll
+    const doubled = [...colPosters, ...colPosters];
+    col.innerHTML = doubled.map(src => `
+      <img class="poster-thumb" src="${src}" alt="" loading="lazy"/>
+    `).join("");
+  });
 }
 
 // =============================================
-// 🔍 Search
+// 🌟 POPULAR MOVIES on Homepage
 // =============================================
-async function searchMovie() {
-  const query = document.getElementById("searchInput").value.trim();
-  const resultsDiv = document.getElementById("results");
-  const errorDiv = document.getElementById("error-msg");
-  const resultsSection = document.getElementById("results-section");
-  const resultsHeading = document.getElementById("results-heading");
+async function loadPopular() {
+  const grid = document.getElementById("popularGrid");
+  grid.innerHTML = `<div class="spinner-container"><div class="spinner"></div></div>`;
 
-  errorDiv.textContent = "";
-  resultsDiv.innerHTML = "";
+  let movies = [];
+  for (let term of POPULAR_SEARCHES) {
+    try {
+      const r = await fetch(`https://www.omdbapi.com/?s=${term}&type=${currentFilter || "movie"}&apikey=${API_KEY}`);
+      const d = await r.json();
+      if (d.Search) {
+        d.Search.slice(0, 2).forEach(m => {
+          if (!movies.find(x => x.imdbID === m.imdbID)) movies.push(m);
+        });
+      }
+    } catch(e) {}
+  }
 
-  if (!query) {
-    errorDiv.textContent = "Please type a movie name first.";
+  if (movies.length === 0) {
+    grid.innerHTML = `<p style="color:var(--text2); grid-column:1/-1">Could not load popular movies.</p>`;
     return;
   }
 
+  grid.innerHTML = movies.map(m => buildCard(m)).join("");
+  observeCards(grid);
+}
+
+// =============================================
+// 🔍 SEARCH
+// =============================================
+async function searchMovie() {
+  const query = document.getElementById("searchInput").value.trim();
+  const resultsDiv  = document.getElementById("results");
+  const errorDiv    = document.getElementById("error-msg");
+  const resultsSection = document.getElementById("resultsSection");
+  const popularSection = document.getElementById("popularSection");
+  const heading     = document.getElementById("resultsHeading");
+
+  hideSuggestions();
+  errorDiv.textContent = "";
+
+  if (!query) { errorDiv.textContent = "Please type a movie name."; return; }
+
   currentQuery = query;
-
-  const cacheKey = `${query}-${currentFilter}-${currentPage}`;
-
+  popularSection.classList.add("hidden");
   resultsSection.classList.remove("hidden");
-  resultsHeading.textContent = `Results for "${query}"`;
-  resultsDiv.innerHTML = `
-    <div class="spinner-container">
-      <div class="spinner"></div>
-    </div>`;
+  heading.textContent = `Results for "${query}"`;
+  resultsDiv.innerHTML = `<div class="spinner-container"><div class="spinner"></div></div>`;
 
-  if (cache[cacheKey]) {
-    displayResults(cache[cacheKey].movies, cache[cacheKey].total);
+  const key = `${query}-${currentFilter}-${currentPage}`;
+  if (cache[key]) {
+    displayResults(cache[key].movies, cache[key].total);
     return;
   }
 
@@ -72,52 +130,37 @@ async function searchMovie() {
     let url = `https://www.omdbapi.com/?s=${encodeURIComponent(query)}&page=${currentPage}&apikey=${API_KEY}`;
     if (currentFilter) url += `&type=${currentFilter}`;
 
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Network error.");
-    const data = await response.json();
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Network error.");
+    const d = await r.json();
 
-    if (data.Response === "False") {
+    if (d.Response === "False") {
       resultsDiv.innerHTML = "";
-      errorDiv.textContent = `No results found for "${query}". Try something else!`;
+      errorDiv.textContent = `No results for "${query}". Try something else!`;
       document.getElementById("pagination").classList.add("hidden");
       return;
     }
 
-    totalResults = parseInt(data.totalResults);
-    cache[cacheKey] = { movies: data.Search, total: totalResults };
-    displayResults(data.Search, totalResults);
+    totalResults = parseInt(d.totalResults);
+    cache[key] = { movies: d.Search, total: totalResults };
+    displayResults(d.Search, totalResults);
 
-  } catch (error) {
+  } catch(e) {
     resultsDiv.innerHTML = "";
-    errorDiv.textContent = `Error: ${error.message}`;
+    errorDiv.textContent = `Error: ${e.message}`;
   }
 }
 
 // =============================================
-// 🎴 Display Results + Scroll Animation
+// 🎴 DISPLAY RESULTS
 // =============================================
 function displayResults(movies, total) {
   const resultsDiv = document.getElementById("results");
   const pagination = document.getElementById("pagination");
 
-  resultsDiv.innerHTML = movies.map(movie => {
-    const poster = movie.Poster !== "N/A"
-      ? movie.Poster
-      : "https://via.placeholder.com/160x230?text=No+Image";
-    return `
-      <div class="card" onclick="openModal('${movie.imdbID}')">
-        <img src="${poster}" alt="${movie.Title}" loading="lazy"/>
-        <div class="card-info">
-          <h3>${movie.Title}</h3>
-          <p>${movie.Year}</p>
-        </div>
-      </div>`;
-  }).join("");
+  resultsDiv.innerHTML = movies.map(m => buildCard(m)).join("");
+  observeCards(resultsDiv);
 
-  // Scroll animation — observe each card
-  observeCards();
-
-  // Pagination
   const totalPages = Math.ceil(total / 10);
   if (totalPages > 1) {
     pagination.classList.remove("hidden");
@@ -130,72 +173,149 @@ function displayResults(movies, total) {
 }
 
 // =============================================
-// 📜 Scroll Animation with IntersectionObserver
+// 🃏 BUILD CARD HTML
 // =============================================
-function observeCards() {
-  const cards = document.querySelectorAll(".card");
+function buildCard(movie) {
+  const poster = movie.Poster !== "N/A"
+    ? movie.Poster
+    : "https://via.placeholder.com/160x234?text=No+Image";
+  return `
+    <div class="card" onclick="openModal('${movie.imdbID}')">
+      <img src="${poster}" alt="${movie.Title}" loading="lazy"/>
+      <div class="card-info">
+        <h3>${movie.Title}</h3>
+        <p>${movie.Year}</p>
+      </div>
+    </div>`;
+}
+
+// =============================================
+// 🔭 SCROLL ANIMATION
+// =============================================
+function observeCards(container) {
+  const cards = container.querySelectorAll(".card");
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, index) => {
+    entries.forEach((entry, i) => {
       if (entry.isIntersecting) {
-        // Staggered delay so cards appear one by one
-        setTimeout(() => {
-          entry.target.classList.add("visible");
-        }, index * 60);
+        setTimeout(() => entry.target.classList.add("visible"), i * 60);
         observer.unobserve(entry.target);
       }
     });
   }, { threshold: 0.1 });
-
-  cards.forEach(card => observer.observe(card));
+  cards.forEach(c => observer.observe(c));
 }
 
 // =============================================
-// 📄 Pagination
+// 💡 SUGGESTIONS DROPDOWN
 // =============================================
-function changePage(direction) {
-  currentPage += direction;
+document.getElementById("searchInput").addEventListener("input", function() {
+  clearTimeout(suggestTimer);
+  const q = this.value.trim();
+  if (q.length < 2) { hideSuggestions(); return; }
+  suggestTimer = setTimeout(() => fetchSuggestions(q), 350);
+});
+
+async function fetchSuggestions(query) {
+  try {
+    let url = `https://www.omdbapi.com/?s=${encodeURIComponent(query)}&apikey=${API_KEY}`;
+    if (currentFilter) url += `&type=${currentFilter}`;
+    const r = await fetch(url);
+    const d = await r.json();
+
+    if (d.Response === "False" || !d.Search) { hideSuggestions(); return; }
+
+    showSuggestions(d.Search.slice(0, 6));
+  } catch(e) { hideSuggestions(); }
+}
+
+function showSuggestions(movies) {
+  const box = document.getElementById("suggestions");
+  box.innerHTML = movies.map(m => {
+    const poster = m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/36x52?text=?";
+    return `
+      <div class="suggestion-item" onclick="selectSuggestion('${m.Title}', '${m.imdbID}')">
+        <img src="${poster}" alt="${m.Title}" loading="lazy"/>
+        <div class="suggestion-info">
+          <div class="suggestion-title">${m.Title}</div>
+          <div class="suggestion-year">${m.Year} · ${m.Type}</div>
+        </div>
+      </div>`;
+  }).join("");
+  box.classList.add("show");
+}
+
+function hideSuggestions() {
+  const box = document.getElementById("suggestions");
+  box.classList.remove("show");
+  box.innerHTML = "";
+}
+
+function selectSuggestion(title, imdbID) {
+  document.getElementById("searchInput").value = title;
+  hideSuggestions();
+  openModal(imdbID);
+}
+
+// Close suggestions when clicking outside
+document.addEventListener("click", function(e) {
+  if (!document.getElementById("searchBox").contains(e.target)) hideSuggestions();
+});
+
+// =============================================
+// 📄 PAGINATION
+// =============================================
+function changePage(dir) {
+  currentPage += dir;
   searchMovie();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 // =============================================
-// 🎬 Open Modal
+// 🔵 FILTER
+// =============================================
+function setFilter(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  if (currentQuery) { currentPage = 1; searchMovie(); }
+  else loadPopular();
+}
+
+// =============================================
+// 🎬 OPEN MODAL
 // =============================================
 async function openModal(imdbID) {
   document.getElementById("modal-overlay").classList.remove("hidden");
-  document.getElementById("modal-title").textContent = "Loading...";
-  document.getElementById("modal-plot").textContent = "";
-  document.getElementById("modal-poster").src = "";
-  document.getElementById("modal-director").textContent = "";
-  document.getElementById("modal-cast").textContent = "";
-  document.getElementById("modal-genre").textContent = "";
-  document.getElementById("modal-imdb").innerHTML = "";
-  document.getElementById("modal-year").textContent = "";
-  document.getElementById("modal-rated").textContent = "";
+  document.getElementById("modal-title").textContent   = "Loading...";
+  document.getElementById("modal-plot").textContent    = "";
+  document.getElementById("modal-poster").src          = "";
+  document.getElementById("modal-director").textContent= "";
+  document.getElementById("modal-cast").textContent    = "";
+  document.getElementById("modal-genre").textContent   = "";
+  document.getElementById("modal-imdb").innerHTML      = "";
+  document.getElementById("modal-year").textContent    = "";
+  document.getElementById("modal-rated").textContent   = "";
   document.getElementById("modal-runtime").textContent = "";
-  document.getElementById("modal-trailer").innerHTML = "";
+  document.getElementById("modal-trailer").innerHTML   = "";
 
   try {
-    const url = `https://www.omdbapi.com/?i=${imdbID}&apikey=${API_KEY}`;
-    const response = await fetch(url);
-    const movie = await response.json();
-
+    const r = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=${API_KEY}`);
+    const movie = await r.json();
     currentMovie = movie;
 
-    document.getElementById("modal-title").textContent = movie.Title;
-    document.getElementById("modal-plot").textContent = movie.Plot;
+    document.getElementById("modal-title").textContent    = movie.Title;
+    document.getElementById("modal-plot").textContent     = movie.Plot;
     document.getElementById("modal-director").textContent = movie.Director;
-    document.getElementById("modal-cast").textContent = movie.Actors;
-    document.getElementById("modal-genre").textContent = movie.Genre;
-    document.getElementById("modal-year").textContent = movie.Year;
-    document.getElementById("modal-rated").textContent = movie.Rated;
-    document.getElementById("modal-runtime").textContent = movie.Runtime;
+    document.getElementById("modal-cast").textContent     = movie.Actors;
+    document.getElementById("modal-genre").textContent    = movie.Genre;
+    document.getElementById("modal-year").textContent     = movie.Year;
+    document.getElementById("modal-rated").textContent    = movie.Rated;
+    document.getElementById("modal-runtime").textContent  = movie.Runtime;
 
     document.getElementById("modal-poster").src = movie.Poster !== "N/A"
       ? movie.Poster
       : "https://via.placeholder.com/200x300?text=No+Image";
 
-    // Star rating
     document.getElementById("modal-imdb").innerHTML = `
       <div class="stars-container">
         <div class="stars">${generateStars(movie.imdbRating)}</div>
@@ -203,22 +323,20 @@ async function openModal(imdbID) {
         <span class="rating-votes">(${movie.imdbVotes} votes)</span>
       </div>`;
 
-    // Favourites button state
     const isFav = favourites.some(f => f.imdbID === movie.imdbID);
     const favBtn = document.getElementById("modal-fav-btn");
     favBtn.textContent = isFav ? "❤️ Remove from Favourites" : "❤️ Add to Favourites";
     favBtn.classList.toggle("active", isFav);
 
-    // Trailer
     loadTrailer(movie.Title, movie.Year);
 
-  } catch (error) {
-    document.getElementById("modal-title").textContent = "Failed to load details.";
+  } catch(e) {
+    document.getElementById("modal-title").textContent = "Failed to load.";
   }
 }
 
 // =============================================
-// ❌ Close Modal
+// ❌ CLOSE MODAL
 // =============================================
 function closeModal() {
   document.getElementById("modal-overlay").classList.add("hidden");
@@ -233,188 +351,106 @@ document.addEventListener("keydown", e => {
 });
 
 // =============================================
-// ⭐ Star Rating
+// ⭐ STARS
 // =============================================
 function generateStars(rating) {
   const num = parseFloat(rating);
   if (isNaN(num)) return `<span class="rating-text">N/A</span>`;
   let html = "";
   for (let i = 1; i <= 10; i++) {
-    if (i <= Math.floor(num)) html += `<span class="star full">★</span>`;
-    else if (i === Math.ceil(num) && num % 1 >= 0.5) html += `<span class="star half">★</span>`;
-    else html += `<span class="star empty">★</span>`;
+    if (i <= Math.floor(num))                      html += `<span class="star full">★</span>`;
+    else if (i === Math.ceil(num) && num%1 >= 0.5) html += `<span class="star half">★</span>`;
+    else                                            html += `<span class="star empty">★</span>`;
   }
   return html;
 }
 
 // =============================================
-// ❤️ Favourites
+// ❤️ FAVOURITES
 // =============================================
 function toggleFavourite() {
   if (!currentMovie) return;
-  const index = favourites.findIndex(f => f.imdbID === currentMovie.imdbID);
-  if (index === -1) {
-    favourites.push({
-      imdbID: currentMovie.imdbID,
-      Title: currentMovie.Title,
-      Year: currentMovie.Year,
-      Poster: currentMovie.Poster
-    });
+  const idx = favourites.findIndex(f => f.imdbID === currentMovie.imdbID);
+  if (idx === -1) {
+    favourites.push({ imdbID: currentMovie.imdbID, Title: currentMovie.Title, Year: currentMovie.Year, Poster: currentMovie.Poster });
   } else {
-    favourites.splice(index, 1);
+    favourites.splice(idx, 1);
   }
   localStorage.setItem("screenseek-favs", JSON.stringify(favourites));
-
   const isFav = favourites.some(f => f.imdbID === currentMovie.imdbID);
-  const favBtn = document.getElementById("modal-fav-btn");
-  favBtn.textContent = isFav ? "❤️ Remove from Favourites" : "❤️ Add to Favourites";
-  favBtn.classList.toggle("active", isFav);
-
+  const btn = document.getElementById("modal-fav-btn");
+  btn.textContent = isFav ? "❤️ Remove from Favourites" : "❤️ Add to Favourites";
+  btn.classList.toggle("active", isFav);
   renderFavourites();
 }
 
 function toggleFavourites() {
-  const section = document.getElementById("favourites-section");
-  section.classList.toggle("hidden");
-  if (!section.classList.contains("hidden")) renderFavourites();
+  const sec = document.getElementById("favouritesSection");
+  sec.classList.toggle("hidden");
+  if (!sec.classList.contains("hidden")) renderFavourites();
 }
 
 function renderFavourites() {
-  const grid = document.getElementById("favourites-grid");
-  if (favourites.length === 0) {
-    grid.innerHTML = `<p style="color:var(--text2); grid-column:1/-1">No favourites yet. Click ❤️ on any movie!</p>`;
+  const grid = document.getElementById("favouritesGrid");
+  if (!favourites.length) {
+    grid.innerHTML = `<p style="color:var(--text2);grid-column:1/-1">No favourites yet!</p>`;
     return;
   }
-  grid.innerHTML = favourites.map(movie => {
-    const poster = movie.Poster !== "N/A"
-      ? movie.Poster
-      : "https://via.placeholder.com/160x230?text=No+Image";
-    return `
-      <div class="card visible" onclick="openModal('${movie.imdbID}')">
-        <img src="${poster}" alt="${movie.Title}" loading="lazy"/>
-        <div class="card-info">
-          <h3>${movie.Title}</h3>
-          <p>${movie.Year}</p>
-        </div>
-      </div>`;
-  }).join("");
+  grid.innerHTML = favourites.map(m => buildCard(m)).join("");
+  observeCards(grid);
 }
 
 // =============================================
-// 🎥 YouTube Trailer
+// 🎥 TRAILER
 // =============================================
 async function loadTrailer(title, year) {
-  const trailerDiv = document.getElementById("modal-trailer");
-  trailerDiv.innerHTML = `<p style="color:var(--text2); font-size:0.85rem; margin-top:16px">Loading trailer...</p>`;
-
-  try {
-    // Search YouTube for the trailer
-    const query = encodeURIComponent(`${title} ${year} official trailer`);
-    const searchUrl = `https://www.youtube.com/results?search_query=${query}`;
-
-    // We embed a YouTube search result — works without API key
-    const videoId = await getYouTubeVideoId(title, year);
-    if (videoId) {
-      trailerDiv.innerHTML = `
-        <p class="modal-label">Trailer</p>
-        <iframe
-          src="https://www.youtube.com/embed/${videoId}"
-          allowfullscreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-        </iframe>`;
-    } else {
-      trailerDiv.innerHTML = `
-        <p class="modal-label">Trailer</p>
-        <a href="https://www.youtube.com/results?search_query=${query}" 
-           target="_blank"
-           style="color:var(--accent); font-size:0.9rem; text-decoration:none;">
-          🎬 Watch trailer on YouTube →
-        </a>`;
-    }
-  } catch {
-    trailerDiv.innerHTML = "";
-  }
-}
-
-async function getYouTubeVideoId(title, year) {
-  // Common known trailers (fallback for popular movies)
-  const knownTrailers = {
-    "Inception": "YoHD9XEInc0",
-    "Interstellar": "zSWdZVtXT7E",
-    "The Dark Knight": "EXeTwQWrcwY",
-    "Avengers: Endgame": "TcMBFSGVi1c",
-    "Spider-Man: No Way Home": "JfVOs4VSpmA",
-    "The Shawshank Redemption": "6hB3S9bIaco",
-    "Parasite": "5xH0HfJHsaY",
-    "Dune": "n9xhJrPXop4",
-    "Oppenheimer": "uYPbbksJxIg",
-    "Barbie": "pBk4NYhaKZg",
+  const div = document.getElementById("modal-trailer");
+  div.innerHTML = `<p style="color:var(--text2);font-size:0.85rem;margin-top:16px">Loading trailer...</p>`;
+  const known = {
+    "Inception":"YoHD9XEInc0","Interstellar":"zSWdZVtXT7E",
+    "The Dark Knight":"EXeTwQWrcwY","Avengers: Endgame":"TcMBFSGVi1c",
+    "Spider-Man: No Way Home":"JfVOs4VSpmA","The Shawshank Redemption":"6hB3S9bIaco",
+    "Parasite":"5xH0HfJHsaY","Dune":"n9xhJrPXop4",
+    "Oppenheimer":"uYPbbksJxIg","Barbie":"pBk4NYhaKZg",
   };
-
-  if (knownTrailers[title]) return knownTrailers[title];
-  return null; // Falls back to YouTube link
-}
-
-// =============================================
-// ✨ Particle Background
-// =============================================
-const canvas = document.getElementById("particles-canvas");
-const ctx = canvas.getContext("2d");
-let particles = [];
-
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-
-function createParticles() {
-  particles = [];
-  const count = Math.floor(window.innerWidth / 15);
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 2 + 0.5,
-      dx: (Math.random() - 0.5) * 0.4,
-      dy: (Math.random() - 0.5) * 0.4,
-      opacity: Math.random() * 0.5 + 0.1
-    });
+  const videoId = known[title] || null;
+  const query = encodeURIComponent(`${title} ${year} official trailer`);
+  if (videoId) {
+    div.innerHTML = `
+      <p class="modal-label">Trailer</p>
+      <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+      </iframe>`;
+  } else {
+    div.innerHTML = `
+      <p class="modal-label">Trailer</p>
+      <a href="https://www.youtube.com/results?search_query=${query}"
+         target="_blank"
+         style="color:var(--accent2);font-size:0.95rem;text-decoration:none;letter-spacing:1px;">
+        🎬 Watch Trailer on YouTube →
+      </a>`;
   }
 }
 
-function animateParticles() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const isDark = document.body.classList.contains("dark");
-  const color = isDark ? "255,255,255" : "0,113,227";
-
-  particles.forEach(p => {
-    p.x += p.dx;
-    p.y += p.dy;
-
-    if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${color}, ${p.opacity})`;
-    ctx.fill();
-  });
-
-  requestAnimationFrame(animateParticles);
+// =============================================
+// 🌙 THEME
+// =============================================
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  document.querySelector(".theme-toggle").textContent =
+    document.body.classList.contains("light") ? "🌙" : "☀️";
 }
 
-window.addEventListener("resize", () => {
-  resizeCanvas();
-  createParticles();
-});
-
-resizeCanvas();
-createParticles();
-animateParticles();
-
 // =============================================
-// ⌨️ Enter key to search
+// ⌨️ ENTER KEY
 // =============================================
 document.getElementById("searchInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") searchMovie();
+  if (e.key === "Enter") { hideSuggestions(); searchMovie(); }
+  if (e.key === "Escape") hideSuggestions();
 });
+
+// =============================================
+// 🚀 INIT — run on page load
+// =============================================
+buildPosterWall();
+loadPopular();
